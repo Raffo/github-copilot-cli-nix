@@ -1,0 +1,46 @@
+name: Auto-update to latest release
+
+on:
+  schedule:
+    - cron: "0 */6 * * *" # every 6 hours
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for updates
+        id: check
+        run: |
+          LATEST=$(curl -s https://api.github.com/repos/github/copilot-cli/releases/latest | jq -r .tag_name)
+          CURRENT=$(jq -r .version sources.json)
+          echo "latest=${LATEST#v}" >> "$GITHUB_OUTPUT"
+          echo "current=$CURRENT" >> "$GITHUB_OUTPUT"
+          if [ "${LATEST#v}" != "$CURRENT" ]; then
+            echo "needs_update=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "needs_update=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run update script
+        if: steps.check.outputs.needs_update == 'true'
+        run: bash update.sh
+
+      - name: Create Pull Request
+        if: steps.check.outputs.needs_update == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          commit-message: "Update github-copilot-cli to v${{ steps.check.outputs.latest }}"
+          title: "Update github-copilot-cli to v${{ steps.check.outputs.latest }}"
+          body: |
+            Automated update from v${{ steps.check.outputs.current }} to v${{ steps.check.outputs.latest }}.
+
+            Release: https://github.com/github/copilot-cli/releases/tag/v${{ steps.check.outputs.latest }}
+          branch: auto-update/v${{ steps.check.outputs.latest }}
+          delete-branch: true
