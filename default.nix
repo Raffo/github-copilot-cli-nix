@@ -16,8 +16,7 @@ pkgs.stdenv.mkDerivation rec {
   };
 
   nativeBuildInputs =
-    [ pkgs.makeBinaryWrapper ]
-    ++ pkgs.lib.optionals pkgs.stdenv.hostPlatform.isLinux [ pkgs.autoPatchelfHook ];
+    pkgs.lib.optionals pkgs.stdenv.hostPlatform.isLinux [ pkgs.autoPatchelfHook ];
   buildInputs = pkgs.lib.optionals pkgs.stdenv.hostPlatform.isLinux [ pkgs.stdenv.cc.cc.lib ];
   sourceRoot = ".";
   dontStrip = true;
@@ -26,11 +25,6 @@ pkgs.stdenv.mkDerivation rec {
     runHook preInstall
     install -Dm755 copilot $out/bin/copilot
     runHook postInstall
-  '';
-
-  postInstall = ''
-    wrapProgram $out/bin/copilot \
-      --add-flags "--no-auto-update"
   '';
 
   meta = with pkgs.lib; {
