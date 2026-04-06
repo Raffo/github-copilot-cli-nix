@@ -7,7 +7,6 @@ on:
 
 permissions:
   contents: write
-  pull-requests: write
 
 jobs:
   update:
@@ -32,15 +31,11 @@ jobs:
         if: steps.check.outputs.needs_update == 'true'
         run: bash update.sh
 
-      - name: Create Pull Request
+      - name: Commit and push update
         if: steps.check.outputs.needs_update == 'true'
-        uses: peter-evans/create-pull-request@v7
-        with:
-          commit-message: "Update github-copilot-cli to v${{ steps.check.outputs.latest }}"
-          title: "Update github-copilot-cli to v${{ steps.check.outputs.latest }}"
-          body: |
-            Automated update from v${{ steps.check.outputs.current }} to v${{ steps.check.outputs.latest }}.
-
-            Release: https://github.com/github/copilot-cli/releases/tag/v${{ steps.check.outputs.latest }}
-          branch: auto-update/v${{ steps.check.outputs.latest }}
-          delete-branch: true
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Update github-copilot-cli to v${{ steps.check.outputs.latest }}"
+          git push origin HEAD
