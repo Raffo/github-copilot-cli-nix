@@ -62,4 +62,4 @@ bash update.sh
 
 ## Auto-update
 
-A GitHub Actions workflow runs every 6 hours, checks for new releases, and opens a PR if an update is available. Merge the PR to publish the new version.
+A GitHub Actions workflow runs every 6 hours, checks for new releases, and straights update main with the new version. Security wise, this assumes that the github releases are trusted. If you don't trust the upstream, don't use this project either. 
