@@ -38,6 +38,7 @@ pkgs.stdenv.mkDerivation rec {
 
   doInstallCheck = pkgs.stdenv.buildPlatform.canExecute pkgs.stdenv.hostPlatform;
   installCheckPhase = ''
+    export HOME="$(mktemp -d)"
     runHook preInstallCheck
     $out/bin/copilot --version
     runHook postInstallCheck
