@@ -6,6 +6,21 @@ The official [nixpkgs package](https://github.com/NixOS/nixpkgs/tree/master/pkgs
 
 No flakes required — uses stable Nix features only.
 
+## Packaging
+
+This package runs the platform-specific JavaScript distribution with Nix's Node.js,
+rather than rewriting the standalone executable. The pinned `patchelf` workaround
+for the standalone executable is no longer needed. Linux native addons still use
+the standard `autoPatchelfHook`, with Nix's OpenSSL available at runtime.
+
+Automatic CLI self-updates are disabled; update through Nix instead. The wrapper
+preserves an existing `SSL_CERT_DIR` and otherwise uses `/etc/ssl/certs` on Linux,
+including NixOS-managed certificates, or Nix's CA bundle on macOS. It does not
+disable TLS verification.
+
+As in nixpkgs, optional GUI, screen-capture, and local-inference dependencies are
+not bundled. Features that require those libraries may be unavailable.
+
 ## Install
 
 ```bash

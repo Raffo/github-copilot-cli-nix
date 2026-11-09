@@ -6,7 +6,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SOURCES_FILE="$ROOT/sources.json"
 
-LATEST_TAG=$(curl -s https://api.github.com/repos/github/copilot-cli/releases/latest | jq -r .tag_name)
+LATEST_TAG=$(curl -fsS https://api.github.com/repos/github/copilot-cli/releases/latest | jq -r .tag_name)
 
 if [ -z "$LATEST_TAG" ] || [ "$LATEST_TAG" = "null" ]; then
   echo "Failed to fetch latest release from GitHub API"
@@ -31,23 +31,24 @@ jq -n --arg v "$VERSION" '{version: $v}' > "$TMP_FILE"
 process_platform() {
   local system="$1"
   local name="$2"
-  local url="https://github.com/github/copilot-cli/releases/download/v${VERSION}/${name}.tar.gz"
+  local url="https://github.com/github/copilot-cli/releases/download/v${VERSION}/${name}"
 
   echo "  Fetching $system ($name)..."
 
   local sha256_hex
-  sha256_hex=$(curl -sL "$url" | sha256sum | awk '{print $1}')
-  local sri_hash="sha256-$(printf '%s' "$sha256_hex" | xxd -r -p | base64 -w0)="
+  sha256_hex=$(curl -fsSL "$url" | sha256sum | awk '{print $1}')
+  local sri_hash
+  sri_hash="sha256-$(printf '%s' "$sha256_hex" | xxd -r -p | base64 | tr -d '\n')"
 
   jq --arg sys "$system" --arg n "$name" --arg h "$sri_hash" \
     '. + {($sys): {name: $n, hash: $h}}' "$TMP_FILE" > "${TMP_FILE}.tmp" \
     && mv "${TMP_FILE}.tmp" "$TMP_FILE"
 }
 
-process_platform "x86_64-linux"   "copilot-linux-x64"
-process_platform "aarch64-linux"  "copilot-linux-arm64"
-process_platform "x86_64-darwin"  "copilot-darwin-x64"
-process_platform "aarch64-darwin" "copilot-darwin-arm64"
+process_platform "x86_64-linux"   "github-copilot-${VERSION}-linux-x64.tgz"
+process_platform "aarch64-linux"  "github-copilot-${VERSION}-linux-arm64.tgz"
+process_platform "x86_64-darwin"  "github-copilot-${VERSION}-darwin-x64.tgz"
+process_platform "aarch64-darwin" "github-copilot-${VERSION}-darwin-arm64.tgz"
 
 mv "$TMP_FILE" "$SOURCES_FILE"
 trap - EXIT

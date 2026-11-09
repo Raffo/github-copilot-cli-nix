@@ -1,15 +1,6 @@
 { pkgs ? import <nixpkgs> { } }:
 
 let
-  # Newer patchelf versions produce overlapping LOAD segments in the upstream binary.
-  patchelf = pkgs.patchelf.overrideAttrs (_: {
-    version = "0.15.2";
-    src = pkgs.fetchurl {
-      url = "https://github.com/NixOS/patchelf/releases/download/0.15.2/patchelf-0.15.2.tar.bz2";
-      hash = "sha256-F3RfVkFZyOIo/EEtplogSLhGxLa0Igt3y/IkFuAvLXw=";
-    };
-    patches = [ ];
-  });
   sources = builtins.fromJSON (builtins.readFile ./sources.json);
   srcConfig =
     sources.${pkgs.stdenv.hostPlatform.system}
@@ -20,21 +11,46 @@ pkgs.stdenv.mkDerivation rec {
   inherit (sources) version;
 
   src = pkgs.fetchurl {
-    url = "https://github.com/github/copilot-cli/releases/download/v${version}/${srcConfig.name}.tar.gz";
+    url = "https://github.com/github/copilot-cli/releases/download/v${version}/${srcConfig.name}";
     inherit (srcConfig) hash;
   };
 
-  buildInputs = pkgs.lib.optionals pkgs.stdenv.hostPlatform.isLinux [ pkgs.stdenv.cc.cc.lib ];
-  sourceRoot = ".";
+  nativeBuildInputs = [ pkgs.makeBinaryWrapper ]
+    ++ pkgs.lib.optionals pkgs.stdenv.hostPlatform.isLinux [ pkgs.autoPatchelfHook ];
+  buildInputs = pkgs.lib.optionals pkgs.stdenv.hostPlatform.isLinux [
+    pkgs.stdenv.cc.cc.lib
+    pkgs.glib
+    pkgs.libsecret
+    pkgs.openssl
+  ];
+  # Native addons load OpenSSL dynamically, so DT_NEEDED scanning is insufficient.
+  runtimeDependencies = pkgs.lib.optionals pkgs.stdenv.hostPlatform.isLinux [
+    (pkgs.lib.getLib pkgs.openssl)
+  ];
+  sourceRoot = "package";
   dontStrip = true;
-  dontPatchELF = true;
 
-  postFixup = pkgs.lib.optionalString pkgs.stdenv.hostPlatform.isLinux ''
-    ${patchelf}/bin/patchelf \
-      --set-interpreter "$(cat $NIX_CC/nix-support/dynamic-linker)" \
-      --set-rpath "${pkgs.lib.makeLibraryPath [ pkgs.stdenv.cc.cc.lib ]}" \
-      $out/bin/copilot
-  '';
+  # Optional GUI, screen-capture, and local-inference features, as in nixpkgs.
+  autoPatchelfIgnoreMissingDeps = [
+    "libX11.so.6"
+    "libXtst.so.6"
+    "libjpeg.so.8"
+    "libpng16.so.16"
+    "libpipewire-0.3.so.0"
+    "libei.so.1"
+    "libwebkit2gtk-4.1.so.0"
+    "libjavascriptcoregtk-4.1.so.0"
+    "libgtk-3.so.0"
+    "libgdk-3.so.0"
+    "libcairo.so.2"
+    "libgdk_pixbuf-2.0.so.0"
+    "libsoup-3.0.so.0"
+    "libwayland-client.so.0"
+    "libdbus-1.so.3"
+    "libxdo.so.3"
+    "libonnxruntime-genai.so"
+    "libonnxruntime.so.1"
+  ];
 
   doInstallCheck = pkgs.stdenv.buildPlatform.canExecute pkgs.stdenv.hostPlatform;
   installCheckPhase = ''
@@ -46,8 +62,18 @@ pkgs.stdenv.mkDerivation rec {
 
   installPhase = ''
     runHook preInstall
-    install -Dm755 copilot $out/bin/copilot
+    mkdir -p "$out/lib/github-copilot-cli"
+    cp -r . "$out/lib/github-copilot-cli"
     runHook postInstall
+  '';
+
+  postInstall = ''
+    makeWrapper ${pkgs.nodejs}/bin/node "$out/bin/copilot" \
+      --add-flag "$out/lib/github-copilot-cli/index.js" \
+      --add-flag --no-auto-update \
+      --set-default NODE_NO_WARNINGS 1 \
+      --set-default SSL_CERT_DIR "${if pkgs.stdenv.hostPlatform.isLinux then "/etc/ssl/certs" else "${pkgs.cacert}/etc/ssl/certs"}" \
+      --prefix PATH : "${pkgs.lib.makeBinPath [ pkgs.bash ]}"
   '';
 
   meta = with pkgs.lib; {
