@@ -1,19 +1,19 @@
 {
-  "version": "1.0.114",
+  "version": "1.0.115",
   "x86_64-linux": {
-    "name": "github-copilot-1.0.114-linux-x64.tgz",
-    "hash": "sha256-6Wh1FfbbI8BeVAP74ff1KD36WPdyQLthrJNb7TnzFyc="
+    "name": "github-copilot-1.0.115-linux-x64.tgz",
+    "hash": "sha256-5BhfqVgXdLlHkkFYOiXdv9MOkSlPSNI3knncBMC2Mmc="
   },
   "aarch64-linux": {
-    "name": "github-copilot-1.0.114-linux-arm64.tgz",
-    "hash": "sha256-bsIYbHvNPaNHWIxm6+ypIblWi4BLssnISWRHCewzU2w="
+    "name": "github-copilot-1.0.115-linux-arm64.tgz",
+    "hash": "sha256-QQ2b3F0tZX+n5keVw+RpTSBpm31lC4tnsFotFdMr70M="
   },
   "x86_64-darwin": {
-    "name": "github-copilot-1.0.114-darwin-x64.tgz",
-    "hash": "sha256-Sg3QanwV3MNVyW+FFpMfLM4cI70zYoFN2L/yAVRjEG8="
+    "name": "github-copilot-1.0.115-darwin-x64.tgz",
+    "hash": "sha256-em3CmeS6mvfE6NVZXmcrdprhlb17VhM6cRH4bDdQTQM="
   },
   "aarch64-darwin": {
-    "name": "github-copilot-1.0.114-darwin-arm64.tgz",
-    "hash": "sha256-81fsZnnwXhLiOMmeuREvNCk612Jb7cKn55EiyHmIh7s="
+    "name": "github-copilot-1.0.115-darwin-arm64.tgz",
+    "hash": "sha256-ft8Y7B3g/CFaXMbV6lGor6q+pWK5BgOOdl3NUkICcNM="
   }
 }
